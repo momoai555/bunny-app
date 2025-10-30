@@ -1,1 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>うさぎのきもちAR🐰</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    margin: 0;
+    background: radial-gradient(circle at center, #000 0%, #000 60%, #000 100%);
+    color: #fff;
+    font-family: "Zen Maru Gothic", system-ui, sans-serif;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .frame {
+    position: relative;
+    width: 90vw;
+    max-width: 480px;
+    border-radius: 24px;
+    background: radial-gradient(circle at top left,
+      rgba(255,255,255,0.18),
+      rgba(0,0,0,0) 70%);
+    box-shadow: 0 40px 80px rgba(255,192,203,0.25),
+                0 0 40px rgba(255,255,255,0.15);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.25);
+  }
+  video {
+    width: 100%;
+    height: auto;
+    display: block;
+    background:#111;
+  }
+  .bubbleWrap {
+    position: absolute;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%);
+    text-align: center;
+    width: calc(100% - 2rem);
+    max-width: 380px;
+  }
+  .bubbleMain {
+    background: rgba(255,255,255,0.9);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(255,182,193,0.4),
+                0 0 30px rgba(255,255,255,0.6);
+    padding: 14px 18px 10px;
+    font-size: 1.2rem;
+    line-height: 1.4;
+    color:#333;
+    text-shadow: 0 0 8px rgba(255,255,255,0.7);
+    font-weight:500;
+    min-height: 2.4em;
+    animation: float 3s ease-in-out infinite;
+    white-space: normal;
+    word-break: keep-all;
+  }
+  .bubbleSub {
+    margin-top: 8px;
+    color:#fff;
+    font-size: 0.9rem;
+    line-height:1.4;
+    font-weight:400;
+    text-shadow:0 0 8px rgba(0,0,0,0.8);
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0px); }
+    50%     { transform: translateY(-4px); }
+  }
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left:0; right:0;
+    height: 3.6rem;
+    background: #fff;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+    border-top-left-radius: 1.1rem;
+    border-top-right-radius: 1.1rem;
+    z-index: 10;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: .6rem;
+    color: #a39189;
+    text-decoration: none;
+  }
+  .nav-item.active { color: #ff87b3; }
+  .nav-item span:first-child { font-size: 1.3rem; line-height: 1.1rem; }
+  .personality-chip {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.8);
+    color:#333;
+    border-radius: .8rem;
+    padding: .3rem .8rem;
+    font-size: .8rem;
+    box-shadow: 0 2px 10px rgba(255,255,255,0.2);
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.8.6"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+</head>
+
+<body>
+  <div class="frame">
+    <div id="personalityChip" class="personality-chip"></div>
+    <video id="webcam" autoplay playsinline muted></video>
+
+    <div class="bubbleWrap">
+      <div id="bubbleMain" class="bubbleMain">🐇　解析中…</div>
+      <div id="bubbleSub" class="bubbleSub">うさぎさん探してるよ…</div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><span>🏠</span><span>ホーム</span></a>
+    <a class="nav-item active" href="ar.html"><span>🔍</span><span>AR</span></a>
+    <a class="nav-item" href="personality.html"><span>🧬</span><span>診断</span></a>
+    <a class="nav-item" href="graph.html"><span>📊</span><span>グラフ</span></a>
+  </nav>
+
+<script>
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/-NL3fIAqm/";
+const videoEl = document.getElementById("webcam");
+const bubbleMain = document.getElementById("bubbleMain");
+const bubbleSub = document.getElementById("bubbleSub");
+let model, lastConfident = null;
+
+// 性格表示
+const pName = localStorage.getItem("bunnyPersonalityName");
+if(pName){
+  document.getElementById("personalityChip").textContent = "🧬 " + pName;
+}
+
+// 結果をlocalStorageに保存（グラフ用）
+function saveMood(label){
+  const today = new Date().toISOString().slice(0,10);
+  const key = "bunnyMoods";
+  const data = JSON.parse(localStorage.getItem(key) || "{}");
+  if(!data[today]) data[today] = [];
+  data[today].push(label);
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function moodMessage(label, percentStr) {
+  const lower = label.toLowerCase();
+  if (lower.includes("relax")) return {main:"💤 おだやかモード", sub:"安心してのんびり中（信頼度 "+percentStr+"）"};
+  if (lower.includes("curious")) return {main:"🐰❓ きょうみしんしん！", sub:"新しいものをチェック（信頼度 "+percentStr+"）"};
+  if (lower.includes("alert")) return {main:"⚡ ピーン！警戒中", sub:"音や動きをじっと見てる（信頼度 "+percentStr+"）"};
+  if (lower.includes("groom")) return {main:"✨ きれいきれいタイム", sub:"毛づくろい中（信頼度 "+percentStr+"）"};
+  if (lower.includes("happy")) return {main:"💗 はしゃぎモード！", sub:"ぴょんぴょんごきげん（信頼度 "+percentStr+"）"};
+  if (lower.includes("angry")) return {main:"💢 足ダン発動！？", sub:"ちょっとイラッとしてるかも（信頼度 "+percentStr+"）"};
+  return {main:"🐇 解析中…", sub:"うさぎさん探してるよ…"};
+}
+
+async function init() {
+  try {
+    model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+  } catch (e) {
+    bubbleMain.textContent = "💦 モデル読めなかった…";
+    bubbleSub.textContent  = "あとでもういちど開いてね";
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+    videoEl.srcObject = stream;
+    videoEl.onloadedmetadata = () => { videoEl.play(); loop(); };
+  } catch (e) {
+    bubbleMain.textContent = "📱 カメラ許可してね";
+    bubbleSub.textContent  = "カメラがないと読めないんだ…";
+  }
+}
+
+async function loop() {
+  if (model && videoEl.readyState === 4) {
+    const predictions = await model.predict(videoEl);
+    if (predictions && predictions.length > 0) {
+      let best = predictions.reduce((a,b)=>a.probability>b.probability?a:b);
+      const conf = best.probability;
+      const rawLabel = best.className;
+      const percentStr = (conf*100).toFixed(1)+"%";
+      const now = Date.now();
+      const isNoneLike = rawLabel.toLowerCase().includes("none") || rawLabel.toLowerCase().includes("nobunny");
+      if (conf >= 0.6 && !isNoneLike) lastConfident = {label: rawLabel, conf: conf, time: now};
+      const recentlySeen = lastConfident && (now - lastConfident.time < 1000);
+      if (isNoneLike || !recentlySeen){
+        bubbleMain.textContent = "🐇 解析中…";
+        bubbleSub.textContent  = "うさぎさん探してるよ…";
+      } else {
+        const msg = moodMessage(lastConfident.label, (lastConfident.conf*100).toFixed(1)+"%");
+        bubbleMain.textContent = msg.main;
+        bubbleSub.textContent  = msg.sub;
+        saveMood(msg.main); // ←ここで記録
+      }
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+init();
+</script>
+</body>
+</html>
 
