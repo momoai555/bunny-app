@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>うさぎアプリ🐰</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Zen Maru Gothic", "メイリオ", sans-serif;
+      background: linear-gradient(180deg, #fffaf5 0%, #ffe4e1 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .app {
+      flex: 1;
+      padding: 1.2rem 1.2rem 4.5rem;
+    }
+    h1 {
+      margin-top: .4rem;
+      margin-bottom: .3rem;
+      color: #553;
+      font-size: 1.8rem;
+    }
+    p.subtitle {
+      margin-top: 0;
+      color: #7b6b63;
+      font-size: .9rem;
+    }
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-top: 1.3rem;
+    }
+    @media (min-width: 600px){
+      .btn-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .card-btn {
+      background: #fff;
+      border: none;
+      border-radius: 1.3rem;
+      padding: 1rem .8rem .9rem;
+      text-align: left;
+      box-shadow: 0 6px 15px rgba(192, 117, 74, 0.12);
+      display: flex;
+      gap: .6rem;
+      align-items: center;
+      transition: transform .15s ease-out;
+    }
+    .card-btn:active { transform: translateY(2px); }
+    .card-icon {
+      font-size: 1.5rem;
+    }
+    .card-title {
+      font-weight: 600;
+      color: #553;
+    }
+    .card-desc {
+      font-size: .7rem;
+      color: #8f7b73;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>🐰 うさぎアプリ</h1>
+    <p class="subtitle">きもちを見る・記録する・性格を知る</p>
+
+    <div class="btn-grid">
+      <button class="card-btn" onclick="go('ar.html')">
+        <span class="card-icon">💗</span>
+        <span><span class="card-title">きもちAR</span><br><span class="card-desc">カメラでいまの気分を表示</span></span>
+      </button>
+      <button class="card-btn" onclick="go('graph.html')">
+        <span class="card-icon">📊</span>
+        <span><span class="card-title">グラフ化</span><br><span class="card-desc">きもちの変化を記録</span></span>
+      </button>
+      <button class="card-btn" onclick="go('personality.html')">
+        <span class="card-icon">🧬</span>
+        <span><span class="card-title">性格診断</span><br><span class="card-desc">うさぎタイプを分析</span></span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function go(p){ location.href = p; }
+  </script>
+</body>
+</html>
