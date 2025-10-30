@@ -1,1 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>うさぎ性格診断</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #fff6ff 0%, #ffd8ef 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "メイリオ", sans-serif;
+      min-height: 100vh;
+      padding-bottom: 4rem;
+    }
+    .page {
+      padding: 1.2rem 1.1rem 4.5rem;
+    }
+    h2 { margin-top: .3rem; }
+    .q-num {
+      font-size: .8rem;
+      color: #7c6879;
+      margin-bottom: .4rem;
+      text-align: right;
+    }
+    .question-box {
+      background: #fff;
+      border-radius: 1.1rem;
+      padding: 1rem;
+      box-shadow: 0 6px 16px rgba(255,114,173,0.12);
+      margin-bottom: 1rem;
+      transition: opacity .3s ease;
+    }
+    .options button {
+      width: 100%;
+      text-align: left;
+      background: #fff;
+      border: 1px solid #ffe3f0;
+      border-radius: 1rem;
+      padding: .7rem .8rem;
+      margin-bottom: .6rem;
+      font-size: .9rem;
+      display: flex;
+      gap: .3rem;
+      align-items: center;
+      transition: background .2s ease, opacity .3s ease;
+    }
+    .options button:hover { background: #ffe6f2; }
+    .options button:active { background: #ffd9eb; }
+    .result-box {
+      background: #fff;
+      border-radius: 1.1rem;
+      padding: 1.2rem;
+      box-shadow: 0 6px 16px rgba(255,114,173,0.12);
+      display: none;
+      animation: fadeIn .4s ease;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    .type-name {
+      font-size: 1.3rem;
+      margin-bottom: .3rem;
+    }
+    .desc {
+      font-size: .9rem;
+      color: #574344;
+      margin-bottom: .5rem;
+      line-height: 1.5em;
+    }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left:0; right:0;
+      height: 3.6rem;
+      background: #fff;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
+      border-top-left-radius: 1.1rem;
+      border-top-right-radius: 1.1rem;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: .6rem;
+      color: #a39189;
+      text-decoration: none;
+    }
+    .nav-item.active { color: #ff63a4; }
+    .nav-item span:first-child { font-size: 1.3rem; line-height: 1.1rem; }
+    #qText, #opts { transition: opacity .3s ease; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h2>🧬 うさぎ性格診断</h2>
+    <p style="margin-top:0;">飼い主さんが観察して答えてね（全12問）</p>
+
+    <div id="quiz-area">
+      <div class="q-num" id="qNum"></div>
+      <div class="question-box" id="qText"></div>
+      <div class="options" id="opts"></div>
+    </div>
+
+    <div class="result-box" id="resultBox">
+      <h3 class="type-name" id="resTitle"></h3>
+      <p class="desc" id="resDetail"></p>
+      <p style="font-size:.7rem;color:#7c6a6a;">※この結果はAR画面でも表示されます</p>
+      <button onclick="location.href='index.html'" style="margin-top:1rem;border:none;background:#ffb6d9;border-radius:1rem;padding:.6rem 1.2rem;font-size:.9rem;">🏠 ホームへ戻る</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html">
+      <span>🏠</span><span>ホーム</span>
+    </a>
+    <a class="nav-item" href="ar.html">
+      <span>🔍</span><span>AR</span>
+    </a>
+    <a class="nav-item active" href="personality.html">
+      <span>🧬</span><span>診断</span>
+    </a>
+    <a class="nav-item" href="log.html">
+      <span>📊</span><span>ログ</span>
+    </a>
+  </nav>
+
+  <script>
+    const quiz = [
+      {q:"飼い主が近づくと？", o:["すぐ寄ってくる","ちょっと様子を見る","あまり気にしない"], t:["S","Sg","Sg"]},
+      {q:"ケージの外では？", o:["近くで遊ぶ","すみで観察","すぐ探検"], t:["S","Sg","S"]},
+      {q:"来客が来たら？", o:["近づく","少し離れる","隠れる"], t:["S","Sg","Sg"]},
+      {q:"朝や夜は？", o:["めっちゃ動く","ちょっとだけ","ほとんど寝てる"], t:["A","C","C"]},
+      {q:"新しいおもちゃ", o:["すぐ遊ぶ","においをかぐ","無視する"], t:["A","C","C"]},
+      {q:"掃除のとき", o:["回りを走る","見守る","離れて休む"], t:["A","C","C"]},
+      {q:"大きな音がしたら？", o:["固まる/逃げる","少し気にする","気にしない"], t:["W","W","B"]},
+      {q:"はじめての場所", o:["ゆっくり進む","すぐ探検","動かず観察"], t:["W","B","W"]},
+      {q:"トンネルがあったら？", o:["すぐ入る","気分で入る","使わない"], t:["W","B","B"]},
+      {q:"なでようとすると？", o:["頭を出す","気分による","ちょっと離れる"], t:["L","L","I"]},
+      {q:"名前を呼ぶと？", o:["来る","見るだけ","ごはんの時だけ来る"], t:["L","I","I"]},
+      {q:"1羽でいるとき", o:["飼い主を見てる","寝てる/毛づくろい","ぬいぐるみをなめる"], t:["L","I","L"]},
+    ];
+
+    const typeData = {
+      "S-A-B-L": ["🌞 アクティブラブリータイプ", "社交的で元気いっぱい！人と遊ぶのが大好きなうさぎ。"],
+      "S-A-B-I": ["💪 リーダーうさタイプ", "好奇心旺盛で堂々としている探検好きなうさぎ。"],
+      "S-A-W-L": ["💗 ピュアハートタイプ", "明るく人なつこいけど少し繊細。やさしい声が好き。"],
+      "S-A-W-I": ["⚡ ツンデレアクティブタイプ", "元気だけど気分屋。信頼した人にだけ甘える。"],
+      "S-C-B-L": ["🍀 おだやかプリンセスタイプ", "落ち着いた甘えんぼ。静かな時間を好む穏やか性格。"],
+      "S-C-B-I": ["🧘‍♀️ クールケアタイプ", "マイペースで心が広い。落ち着いた雰囲気のしっかり者。"],
+      "S-C-W-L": ["🫖 ナイーブスイートタイプ", "ちょっと怖がりだけど優しい。守ってあげたくなる性格。"],
+      "S-C-W-I": ["🕊 シャイチャームタイプ", "静かで慎重。信頼した相手にはとことん懐く。"],
+      "Sg-A-B-L": ["🐾 ソロハンタータイプ", "自由が好きな冒険家タイプ。元気で前向き！"],
+      "Sg-A-B-I": ["🔥 ワイルドアドベンチャータイプ", "独立心が強く、自分の世界を楽しむ冒険者。"],
+      "Sg-C-W-L": ["🌙 マイペースヒーラータイプ", "ゆったり癒し系。穏やかな空気で周りを落ち着かせる。"],
+      "Sg-C-W-I": ["🪶 ひとりごと哲学者タイプ", "慎重で観察好き。静かに世界を見つめる思索家。"],
+    };
+
+    let idx = 0;
+    let score = {S:0,Sg:0,A:0,C:0,W:0,B:0,L:0,I:0};
+
+    const qNum  = document.getElementById("qNum");
+    const qText = document.getElementById("qText");
+    const opts  = document.getElementById("opts");
+    const resBox= document.getElementById("resultBox");
+    const resTitle = document.getElementById("resTitle");
+    const resDetail= document.getElementById("resDetail");
+
+    function showQ(){
+      if(idx >= quiz.length){
+        showResult();
+        return;
+      }
+      qNum.textContent = `Q${idx+1} / ${quiz.length}`;
+      qText.style.opacity = 0;
+      opts.style.opacity = 0;
+
+      setTimeout(() => {
+        qText.textContent = quiz[idx].q;
+        opts.innerHTML = "";
+        quiz[idx].o.forEach((text, i)=>{
+          const btn = document.createElement("button");
+          btn.innerHTML = `🐰 ${text}`;
+          btn.onclick = ()=>answer(i);
+          opts.appendChild(btn);
+        });
+        qText.style.opacity = 1;
+        opts.style.opacity = 1;
+      }, 200);
+    }
+
+    function answer(optIdx){
+      const key = quiz[idx].t[optIdx];
+      score[key] = (score[key]||0) + 1;
+      opts.style.opacity = 0.5;
+      setTimeout(()=>{
+        idx++;
+        showQ();
+      }, 400);
+    }
+
+    function showResult(){
+      document.getElementById("quiz-area").style.display = "none";
+      resBox.style.display = "block";
+
+      const social = score.S >= score.Sg ? "S" : "Sg";
+      const active = score.A >= score.C ? "A" : "C";
+      const wary   = score.W >= score.B ? "W" : "B";
+      const love   = score.L >= score.I ? "L" : "I";
+      const typeCode = `${social}-${active}-${wary}-${love}`;
+
+      const info = typeData[typeCode] || ["🐰 バランスタイプ", "特徴がほどよく混ざったマイペースなうさぎ。"];
+      resTitle.textContent = info[0];
+      resDetail.textContent = info[1];
+
+      localStorage.setItem("bunnyPersonality", typeCode);
+      localStorage.setItem("bunnyPersonalityName", info[0]);
+    }
+
+    showQ();
+  </script>
+</body>
+</html>
 
