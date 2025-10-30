@@ -1,1 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>きもちグラフ</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f9fafb;
+      font-family: -apple-system, BlinkMacSystemFont, "メイリオ", sans-serif;
+      min-height: 100vh;
+      padding-bottom: 3.6rem;
+    }
+    .page {
+      padding: 1.2rem 1.1rem 4.5rem;
+    }
+    h2 { margin-top: .2rem; }
+    .day-card {
+      background: #fff;
+      border-radius: 1rem;
+      padding: .8rem 1rem;
+      margin-bottom: .6rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .mood-badge {
+      display: inline-block;
+      background: #ffe2cc;
+      border-radius: .7rem;
+      padding: .25rem .6rem;
+      margin-right: .3rem;
+      margin-top: .3rem;
+      font-size: .7rem;
+    }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left:0; right:0;
+      height: 3.6rem;
+      background: #fff;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
+      border-top-left-radius: 1.1rem;
+      border-top-right-radius: 1.1rem;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: .6rem;
+      color: #a39189;
+      text-decoration: none;
+    }
+    .nav-item.active { color: #ff9357; }
+    .nav-item span:first-child { font-size: 1.3rem; line-height: 1.1rem; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h2>📊 きもちグラフ</h2>
+    <p style="margin-top:0;">ARで登録した気持ちを日付ごとに表示するよ</p>
+    <div id="listArea"></div>
+  </div>
 
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html">
+      <span>🏠</span><span>ホーム</span>
+    </a>
+    <a class="nav-item" href="ar.html">
+      <span>🔍</span><span>AR</span>
+    </a>
+    <a class="nav-item" href="personality.html">
+      <span>🧬</span><span>診断</span>
+    </a>
+    <a class="nav-item active" href="graph.html">
+      <span>📊</span><span>グラフ</span>
+    </a>
+  </nav>
+
+  <script>
+    const data = JSON.parse(localStorage.getItem("bunnyMoods") || "{}");
+    const area = document.getElementById("listArea");
+
+    const days = Object.keys(data).sort().reverse(); // 新しい日が上
+    if (days.length === 0){
+      area.innerHTML = "<p>まだ記録がありません。ARページで“おだやか”などを登録してね。</p>";
+    } else {
+      days.forEach(day => {
+        const div = document.createElement("div");
+        div.className = "day-card";
+        const moods = data[day];
+        div.innerHTML = `<strong>${day}</strong><br />` + moods.map(m => `<span class="mood-badge">${m}</span>`).join("");
+        area.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
